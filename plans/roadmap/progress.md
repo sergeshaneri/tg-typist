@@ -23,7 +23,7 @@
 
 ## Recommended Next Step
 
-Continue with `S1.2`: add settings module with env parsing, safe redaction, test defaults and Railway `PORT` handling.
+Continue with `S1.4`: add unified validation script and baseline tooling.
 
 ## Milestone Checklist
 
@@ -150,6 +150,29 @@ Continue with `S1.2`: add settings module with env parsing, safe redaction, test
   - Added safe config output and repr redaction for tokens, API keys, webhook secrets and database passwords.
   - Added deterministic unit tests covering required env behavior, test defaults, port handling, numeric validation, admin ID parsing and redaction.
 - Checks:
+  - `.venv\Scripts\python.exe -m compileall -q src tests`: passed
+  - `.venv\Scripts\python.exe -m pytest tests/unit/test_settings.py`: passed, 13 tests
+  - `python scripts/validate.py`: not run, `scripts/validate.py` does not exist yet
+- Decisions:
+  - none
+- Remaining:
+  - none
+
+### 2026-06-20 - Task S1.3
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/logging.py`
+  - `tests/unit/test_logging.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+- Summary:
+  - Added a stdlib-backed structured logger adapter with JSON formatting.
+  - Added redaction for token/key/secret/password-like fields, Authorization headers and database URL passwords.
+  - Suppressed full `message`, `prompt`, `text` and `content` payload fields from default structured logs.
+  - Added unit tests proving Telegram token, DeepSeek key, DB URL password, Authorization header and full text/prompt fields do not leak.
+- Checks:
+  - `.venv\Scripts\python.exe -m pytest tests/unit/test_logging.py`: passed, 4 tests
   - `.venv\Scripts\python.exe -m compileall -q src tests`: passed
   - `.venv\Scripts\python.exe -m pytest tests/unit/test_settings.py`: passed, 13 tests
   - `python scripts/validate.py`: not run, `scripts/validate.py` does not exist yet
