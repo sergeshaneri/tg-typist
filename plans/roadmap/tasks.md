@@ -19,7 +19,7 @@ Do not implement more than one task at a time unless the user explicitly asks.
 | ID | Depends | Status | Goal | Likely files | Checks | Risks |
 |---|---|---:|---|---|---|---|
 | S1.1 | H0.1 | DONE | Create Python project scaffold with package layout and dependency config. | `pyproject.toml`, `src/tg_typist/__init__.py`, `.gitignore`, `.env.example` | `python -m compileall -q src` | Wrong dependency versions or missing Railway-compatible start path. |
-| S1.2 | S1.1 | TODO | Add settings module with env parsing, safe redaction, test defaults and Railway `PORT` handling. | `src/tg_typist/settings.py`, `tests/unit/test_settings.py` | `pytest tests/unit/test_settings.py` | Secrets could appear in repr/log output or app could ignore Railway port. |
+| S1.2 | S1.1 | DONE | Add settings module with env parsing, safe redaction, test defaults and Railway `PORT` handling. | `src/tg_typist/settings.py`, `tests/unit/test_settings.py` | `pytest tests/unit/test_settings.py` | Secrets could appear in repr/log output or app could ignore Railway port. |
 | S1.3 | S1.2 | TODO | Add structured logging helper with redaction filters. | `src/tg_typist/logging.py`, `tests/unit/test_logging.py` | `pytest tests/unit/test_logging.py` | Logging full messages or secrets by accident. |
 | S1.4 | S1.1 | TODO | Add unified validation script and baseline tooling. | `scripts/validate.py`, `scripts/smoke_config.py`, `pyproject.toml` | `python scripts/validate.py` | Validation may assume tests or DB before they exist; use staged checks. |
 | S1.5 | S1.4 | TODO | Add GitHub Actions workflow for deterministic checks. | `.github/workflows/ci.yml` | local `python scripts/validate.py` | CI must not require live secrets. |
