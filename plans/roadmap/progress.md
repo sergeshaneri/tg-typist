@@ -13,7 +13,7 @@
 | Area | Status | Notes |
 |---|---:|---|
 | Roadmap artifacts | DONE | PRD, architecture, domain model, deployment, security checklist, tasks and handoff created. |
-| Application scaffold | BLOCKED | Scaffold files created; mandatory compile check is blocked because no working Python runtime is available in this environment. |
+| Application scaffold | DONE | Python project scaffold and dependency metadata created. |
 | Database | TODO | Railway PostgreSQL planned. |
 | Telegram integration | TODO | Production webhook planned. |
 | DeepSeek integration | TODO | Adapter planned with mocked tests. |
@@ -23,7 +23,7 @@
 
 ## Recommended Next Step
 
-Unblock `S1.1` by installing or enabling Python 3.12+, then run `python -m compileall -q src` and mark the task `DONE` if it passes.
+Continue with `S1.2`: add settings module with env parsing, safe redaction, test defaults and Railway `PORT` handling.
 
 ## Milestone Checklist
 
@@ -114,7 +114,7 @@ Unblock `S1.1` by installing or enabling Python 3.12+, then run `python -m compi
 
 ### 2026-06-20 - Task S1.1
 
-- Status: BLOCKED
+- Status: DONE
 - Changed files:
   - `pyproject.toml`
   - `src/tg_typist/__init__.py`
@@ -128,10 +128,8 @@ Unblock `S1.1` by installing or enabling Python 3.12+, then run `python -m compi
   - Added local ignore rules for Python artifacts, virtualenvs and `.env` files.
   - Added `.env.example` with placeholder-only configuration values.
 - Checks:
-  - `python -m compileall -q src`: failed, `python.exe` is the Windows Store alias and exits with `ResourceUnavailable: Указанный сеанс работы не существует. Возможно, он уже завершен.`
-  - `py --version`: failed, `No installed Python found!`
-  - `python3 --version`: failed, `python3.exe` is the Windows Store alias and exits with `ResourceUnavailable: Указанный сеанс работы не существует. Возможно, он уже завершен.`
+  - `python -m compileall -q src`: passed using `C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe`
 - Decisions:
   - none
 - Remaining:
-  - Install or enable Python 3.12+, rerun `python -m compileall -q src`, then mark `S1.1` as `DONE` if the check passes.
+  - none
