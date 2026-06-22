@@ -9,15 +9,17 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tg_typist.db.models import HISTORY_POLICY_FULL_ACTIVE_SESSION
+from tg_typist.db.models import (
+    FALLBACK_POLICY_NONE,
+    FALLBACK_POLICY_TAIL_WINDOW,
+    FALLBACK_REASON_CONTEXT_LIMIT,
+    HISTORY_POLICY_FULL_ACTIVE_SESSION,
+    HISTORY_POLICY_TAIL_WINDOW_AFTER_CONTEXT_LIMIT,
+)
 from tg_typist.db.repositories import MessageRepository
 from tg_typist.llm.prompts import SystemPrompt, load_system_prompt
 
 LLMRole = Literal["system", "user", "assistant"]
-HISTORY_POLICY_TAIL_WINDOW_AFTER_CONTEXT_LIMIT = "tail_window_after_context_limit"
-FALLBACK_POLICY_NONE = "none"
-FALLBACK_POLICY_TAIL_WINDOW = "tail_window"
-FALLBACK_REASON_CONTEXT_LIMIT = "context_limit"
 
 
 @dataclass(frozen=True, slots=True)

@@ -24,12 +24,22 @@ SESSION_STATUS_ACTIVE = "active"
 SESSION_STATUS_CLOSED = "closed"
 SESSION_STATUS_ERRORED = "errored"
 HISTORY_POLICY_FULL_ACTIVE_SESSION = "full_active_session"
+HISTORY_POLICY_TAIL_WINDOW_AFTER_CONTEXT_LIMIT = "tail_window_after_context_limit"
+FALLBACK_POLICY_NONE = "none"
+FALLBACK_POLICY_TAIL_WINDOW = "tail_window"
+FALLBACK_REASON_CONTEXT_LIMIT = "context_limit"
 UPDATE_STATUS_RECEIVED = "received"
 MESSAGE_ROLE_USER = "user"
 MESSAGE_ROLE_ASSISTANT = "assistant"
 MESSAGE_STATUS_SAVED = "saved"
 MODEL_PROVIDER_DEEPSEEK = "deepseek"
 MODEL_CALL_STATUS_PENDING = "pending"
+MODEL_CALL_STATUS_SUCCESS = "success"
+MODEL_CALL_STATUS_TIMEOUT = "timeout"
+MODEL_CALL_STATUS_RATE_LIMITED = "rate_limited"
+MODEL_CALL_STATUS_CONTEXT_LIMIT = "context_limit"
+MODEL_CALL_STATUS_PROVIDER_ERROR = "provider_error"
+MODEL_CALL_STATUS_UNEXPECTED_ERROR = "unexpected_error"
 
 
 def utc_now() -> datetime:
@@ -179,6 +189,12 @@ class ModelCall(UUIDPrimaryKeyMixin, Base):
         default=HISTORY_POLICY_FULL_ACTIVE_SESSION,
         nullable=False,
     )
+    fallback_policy: Mapped[str] = mapped_column(
+        String(64),
+        default=FALLBACK_POLICY_NONE,
+        nullable=False,
+    )
+    fallback_reason: Mapped[str | None] = mapped_column(String(128))
     request_message_count: Mapped[int | None]
     request_char_count: Mapped[int | None]
     status: Mapped[str] = mapped_column(
@@ -207,5 +223,7 @@ class ModelCall(UUIDPrimaryKeyMixin, Base):
             self.provider = MODEL_PROVIDER_DEEPSEEK
         if self.history_policy is None:
             self.history_policy = HISTORY_POLICY_FULL_ACTIVE_SESSION
+        if self.fallback_policy is None:
+            self.fallback_policy = FALLBACK_POLICY_NONE
         if self.status is None:
             self.status = MODEL_CALL_STATUS_PENDING

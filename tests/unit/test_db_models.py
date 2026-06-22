@@ -10,6 +10,7 @@ from sqlalchemy.schema import CreateTable
 
 from tg_typist.db.base import Base
 from tg_typist.db.models import (
+    FALLBACK_POLICY_NONE,
     HISTORY_POLICY_FULL_ACTIVE_SESSION,
     SESSION_STATUS_ACTIVE,
     InterviewSession,
@@ -22,6 +23,10 @@ from tg_typist.db.models import (
 ROOT = Path(__file__).resolve().parents[2]
 MIGRATION_PATH = (
     ROOT / "src/tg_typist/db/migrations/versions/20260621_0001_create_core_tables.py"
+)
+FALLBACK_MIGRATION_PATH = (
+    ROOT
+    / "src/tg_typist/db/migrations/versions/20260622_0002_add_model_call_fallback_metadata.py"
 )
 
 
@@ -100,6 +105,8 @@ def test_model_defaults_match_mvp_policy() -> None:
     assert session.history_policy == HISTORY_POLICY_FULL_ACTIVE_SESSION
     assert model_call.provider == "deepseek"
     assert model_call.history_policy == HISTORY_POLICY_FULL_ACTIVE_SESSION
+    assert model_call.fallback_policy == FALLBACK_POLICY_NONE
+    assert model_call.fallback_reason is None
 
 
 def test_initial_migration_creates_core_tables_and_indexes() -> None:
@@ -122,3 +129,19 @@ def test_initial_migration_creates_core_tables_and_indexes() -> None:
 def test_metadata_compiles_for_postgresql() -> None:
     for table in Base.metadata.sorted_tables:
         str(CreateTable(table).compile(dialect=postgresql.dialect()))  # type: ignore[no-untyped-call]
+
+
+def test_fallback_metadata_migration_adds_model_call_columns() -> None:
+    spec = importlib.util.spec_from_file_location("fallback_migration", FALLBACK_MIGRATION_PATH)
+    assert spec is not None
+    assert spec.loader is not None
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+
+    assert migration.revision == "20260622_0002"
+    assert migration.down_revision == "20260621_0001"
+
+    migration_text = FALLBACK_MIGRATION_PATH.read_text(encoding="utf-8")
+    assert '"fallback_policy"' in migration_text
+    assert '"fallback_reason"' in migration_text
+    assert 'server_default="none"' in migration_text

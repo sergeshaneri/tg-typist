@@ -689,3 +689,32 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
   - none
 - Remaining:
   - Continue with `L4.5` to persist model-call metadata, including context-limit and fallback policy details.
+
+### 2026-06-22 - Task L4.5
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/db/models.py`
+  - `src/tg_typist/db/repositories.py`
+  - `src/tg_typist/db/migrations/versions/20260622_0002_add_model_call_fallback_metadata.py`
+  - `src/tg_typist/llm/history.py`
+  - `src/tg_typist/service/interview.py`
+  - `tests/unit/test_db_models.py`
+  - `tests/integration/test_model_call_metadata.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+  - `plans/roadmap/decisions.md`
+- Summary:
+  - Added `fallback_policy` and `fallback_reason` to `model_calls` with an Alembic migration.
+  - Added DB constants for fallback policies/reasons and model-call terminal statuses.
+  - Extended `ModelCallRepository.create_pending` and `update_result` to persist history/fallback/count metadata without raw prompt text.
+  - Added `InterviewService.create_pending_model_call` and `update_model_call_metadata` for the before/after provider-call flow that `M5.1` will use.
+  - Added integration tests for successful metadata persistence and context-limit fallback failure metadata without storing raw prompt/user text in `model_calls`.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\unit\test_db_models.py tests\integration\test_model_call_metadata.py tests\integration\test_repositories.py tests\integration\test_text_message_shell.py`: passed, 18 tests.
+  - `.\.venv\Scripts\ruff.exe check src\tg_typist\db src\tg_typist\service tests\unit\test_db_models.py tests\integration\test_model_call_metadata.py`: passed.
+  - `.\.venv\Scripts\mypy.exe src tests\integration\test_model_call_metadata.py tests\unit\test_db_models.py`: passed.
+- Decisions:
+  - `DEC-011`
+- Remaining:
+  - Continue with `M5.1` to wire saved user messages, history building, DeepSeek calls and model-call metadata into end-to-end mocked interview processing.

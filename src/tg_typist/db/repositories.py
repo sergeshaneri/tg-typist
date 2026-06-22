@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tg_typist.db.models import (
+    FALLBACK_POLICY_NONE,
     HISTORY_POLICY_FULL_ACTIVE_SESSION,
     MESSAGE_ROLE_ASSISTANT,
     MESSAGE_ROLE_USER,
@@ -324,6 +325,8 @@ class ModelCallRepository:
         request_char_count: int,
         provider: str = MODEL_PROVIDER_DEEPSEEK,
         history_policy: str = HISTORY_POLICY_FULL_ACTIVE_SESSION,
+        fallback_policy: str = FALLBACK_POLICY_NONE,
+        fallback_reason: str | None = None,
     ) -> ModelCall:
         """Create model-call metadata before issuing the provider request."""
 
@@ -334,6 +337,8 @@ class ModelCallRepository:
             model=model,
             system_prompt_version=system_prompt_version,
             history_policy=history_policy,
+            fallback_policy=fallback_policy,
+            fallback_reason=fallback_reason,
             request_message_count=request_message_count,
             request_char_count=request_char_count,
             status=MODEL_CALL_STATUS_PENDING,
@@ -347,6 +352,11 @@ class ModelCallRepository:
         model_call_id: UUID,
         *,
         status: str,
+        history_policy: str | None = None,
+        fallback_policy: str | None = None,
+        fallback_reason: str | None = None,
+        request_message_count: int | None = None,
+        request_char_count: int | None = None,
         latency_ms: int | None = None,
         prompt_tokens: int | None = None,
         completion_tokens: int | None = None,
@@ -361,6 +371,16 @@ class ModelCallRepository:
             raise ValueError(f"Unknown model_call_id: {model_call_id}")
 
         model_call.status = status
+        if history_policy is not None:
+            model_call.history_policy = history_policy
+        if fallback_policy is not None:
+            model_call.fallback_policy = fallback_policy
+        if fallback_reason is not None:
+            model_call.fallback_reason = fallback_reason
+        if request_message_count is not None:
+            model_call.request_message_count = request_message_count
+        if request_char_count is not None:
+            model_call.request_char_count = request_char_count
         model_call.latency_ms = latency_ms
         model_call.prompt_tokens = prompt_tokens
         model_call.completion_tokens = completion_tokens

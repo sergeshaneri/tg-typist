@@ -14,19 +14,19 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 
 from tg_typist.db.base import Base
+from tg_typist.db.models import (
+    FALLBACK_POLICY_NONE,
+    FALLBACK_POLICY_TAIL_WINDOW,
+    FALLBACK_REASON_CONTEXT_LIMIT,
+    HISTORY_POLICY_TAIL_WINDOW_AFTER_CONTEXT_LIMIT,
+)
 from tg_typist.db.repositories import (
     InterviewSessionRepository,
     MessageRepository,
     ProcessedTelegramUpdateRepository,
     TelegramUserRepository,
 )
-from tg_typist.llm.history import (
-    FALLBACK_POLICY_NONE,
-    FALLBACK_POLICY_TAIL_WINDOW,
-    FALLBACK_REASON_CONTEXT_LIMIT,
-    HISTORY_POLICY_TAIL_WINDOW_AFTER_CONTEXT_LIMIT,
-    HistoryBuilder,
-)
+from tg_typist.llm.history import HistoryBuilder
 from tg_typist.llm.prompts import SystemPrompt
 
 

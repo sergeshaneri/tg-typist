@@ -55,7 +55,7 @@ Do not implement more than one task at a time unless the user explicitly asks.
 | L4.2 | D2.4, L4.1 | DONE | Add history builder that emits system prompt plus full active-session messages. | `src/tg_typist/llm/history.py`, tests | history tests | Accidentally sending archived sessions or missing latest user message. |
 | L4.3 | S1.2 | DONE | Add DeepSeek HTTP client with typed success/error results, current model defaults, timeout and retries. | `src/tg_typist/llm/deepseek.py`, `llm/errors.py`, tests with respx | adapter tests | Exact DeepSeek response shape and model names need official-doc verification. |
 | L4.4 | L4.3 | DONE | Add context-limit classification and one retry fallback contract without summarization. | `llm/errors.py`, `llm/history.py`, tests | context-limit tests | Fallback could silently violate full-history policy if not recorded. |
-| L4.5 | L4.3 | TODO | Add model-call metadata persistence integration. | repositories, service tests | service tests | Error metadata could leak raw provider response. |
+| L4.5 | L4.3 | DONE | Add model-call metadata persistence integration. | repositories, service tests | service tests | Error metadata could leak raw provider response. |
 
 ## Phase 5: Interview Service Integration
 

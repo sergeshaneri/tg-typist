@@ -218,3 +218,22 @@ Model name stays configurable, and adapter tests should assert that configured m
 ### Verification Update - 2026-06-22
 
 Official DeepSeek API docs were checked during `L4.3`. The OpenAI-compatible API uses `https://api.deepseek.com/chat/completions`; current documented model IDs are `deepseek-v4-flash` and `deepseek-v4-pro`; `deepseek-chat` and `deepseek-reasoner` are documented as deprecated on 2026-07-24 15:59 UTC. The MVP client default is `deepseek-v4-flash`, while `DEEPSEEK_MODEL` remains configurable.
+
+## DEC-011: Model calls store fallback metadata, not prompt text
+
+- Status: Accepted
+- Date: 2026-06-22
+- Owner: implementation
+- Related tasks: L4.4, L4.5, M5.1
+
+### Context
+
+Context-limit fallback changes which prompt payload is sent to DeepSeek. The system needs enough metadata to debug that behavior without storing raw prompt/user text in `model_calls`.
+
+### Decision
+
+Add `fallback_policy` and `fallback_reason` to `model_calls`. Store request message count, character count, history policy, fallback policy/reason, status, latency, token usage and redacted error metadata. Do not store raw prompt messages or assistant response text in `model_calls`.
+
+### Consequences
+
+`M5.1` can persist model-call metadata before and after provider calls while preserving privacy. Prompt text remains in `messages`, scoped by session, and model-call rows only carry operational metadata.
