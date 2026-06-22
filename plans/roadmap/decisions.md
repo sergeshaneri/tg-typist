@@ -214,3 +214,7 @@ Before implementing the adapter, verify official DeepSeek docs. Prefer `deepseek
 ### Consequences
 
 Model name stays configurable, and adapter tests should assert that configured model value is passed through.
+
+### Verification Update - 2026-06-22
+
+Official DeepSeek API docs were checked during `L4.3`. The OpenAI-compatible API uses `https://api.deepseek.com/chat/completions`; current documented model IDs are `deepseek-v4-flash` and `deepseek-v4-pro`; `deepseek-chat` and `deepseek-reasoner` are documented as deprecated on 2026-07-24 15:59 UTC. The MVP client default is `deepseek-v4-flash`, while `DEEPSEEK_MODEL` remains configurable.

@@ -637,3 +637,29 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
   - none
 - Remaining:
   - Continue with `L4.3` for the DeepSeek HTTP client.
+
+### 2026-06-22 - Task L4.3
+
+- Status: DONE
+- Changed files:
+  - `.env.example`
+  - `src/tg_typist/llm/deepseek.py`
+  - `src/tg_typist/llm/errors.py`
+  - `tests/unit/test_deepseek_client.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+  - `plans/roadmap/decisions.md`
+- Summary:
+  - Verified official DeepSeek docs for the OpenAI-compatible `/chat/completions` endpoint and current model IDs.
+  - Added a typed async `DeepSeekClient` with `from_settings`, safe missing-key handling, default `deepseek-v4-flash`, env model override, timeout support and bounded retries for timeout/rate-limit/provider failures.
+  - Added typed success/failure results carrying assistant text, token usage, finish reason, status/error metadata and latency without raw prompt or secrets.
+  - Added mocked HTTP tests for payload/auth, default model, missing API key, timeout retry, retryable 503 recovery, non-retried auth failure with key redaction, invalid success shape and exhausted server errors.
+  - Updated `.env.example` to use the verified default model.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\unit\test_deepseek_client.py`: passed, 8 tests.
+  - `.\.venv\Scripts\ruff.exe check src\tg_typist\llm tests\unit\test_deepseek_client.py --fix`: passed, 2 fixes applied.
+  - `.\.venv\Scripts\mypy.exe src tests\unit\test_deepseek_client.py`: passed.
+- Decisions:
+  - `DEC-010` verification update.
+- Remaining:
+  - Continue with `L4.4` for context-limit classification and explicit no-summarization retry fallback behavior.
