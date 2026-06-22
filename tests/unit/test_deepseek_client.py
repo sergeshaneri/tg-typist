@@ -15,6 +15,8 @@ from tg_typist.llm.deepseek import (
 )
 from tg_typist.llm.errors import (
     DEEPSEEK_ERROR_AUTHENTICATION,
+    DEEPSEEK_ERROR_CONTEXT_LIMIT,
+    DEEPSEEK_ERROR_INVALID_REQUEST,
     DEEPSEEK_ERROR_INVALID_RESPONSE,
     DEEPSEEK_ERROR_MISSING_API_KEY,
     DEEPSEEK_ERROR_PROVIDER,
@@ -245,3 +247,115 @@ async def test_exhausted_server_errors_return_provider_error() -> None:
     assert isinstance(result, DeepSeekFailure)
     assert result.error.code == DEEPSEEK_ERROR_PROVIDER
     assert result.error.retryable is True
+
+
+async def test_context_limit_error_is_classified_without_normal_retry() -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            422,
+            json={
+                "error": {
+                    "message": "request was too large",
+                    "type": "invalid_request_error",
+                    "code": "context_length_exceeded",
+                }
+            },
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="https://deepseek.test",
+    ) as http_client:
+        client = DeepSeekClient(
+            api_key="test-key",
+            max_retries=2,
+            http_client=http_client,
+        )
+        result = await client.complete(prompt_messages())
+
+    assert calls == 1
+    assert isinstance(result, DeepSeekFailure)
+    assert result.error.code == DEEPSEEK_ERROR_CONTEXT_LIMIT
+    assert result.error.provider_error_code == "context_length_exceeded"
+    assert result.error.provider_error_type == "invalid_request_error"
+    assert result.error.retryable is False
+
+
+async def test_message_only_context_limit_error_is_classified() -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _request: httpx.Response(
+                400,
+                json={"error": {"message": "context length is too long"}},
+            )
+        ),
+        base_url="https://deepseek.test",
+    ) as http_client:
+        client = DeepSeekClient(api_key="test-key", http_client=http_client)
+        result = await client.complete(prompt_messages())
+
+    assert isinstance(result, DeepSeekFailure)
+    assert result.error.code == DEEPSEEK_ERROR_CONTEXT_LIMIT
+
+
+async def test_non_context_validation_error_stays_invalid_request() -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _request: httpx.Response(
+                422,
+                json={"error": {"message": "temperature is invalid", "code": "bad_param"}},
+            )
+        ),
+        base_url="https://deepseek.test",
+    ) as http_client:
+        client = DeepSeekClient(api_key="test-key", http_client=http_client)
+        result = await client.complete(prompt_messages())
+
+    assert isinstance(result, DeepSeekFailure)
+    assert result.error.code == DEEPSEEK_ERROR_INVALID_REQUEST
+    assert result.error.retryable is False
+
+
+async def test_context_limit_fallback_retries_once_with_explicit_tail_messages() -> None:
+    request_bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        request_bodies.append(json.loads(request.content))
+        if len(request_bodies) == 1:
+            return httpx.Response(
+                400,
+                json={"error": {"message": "context length is too long"}},
+            )
+        return httpx.Response(200, json=success_body())
+
+    fallback_messages = (
+        LLMMessage(role="system", content="system rules"),
+        LLMMessage(role="user", content="latest tail message"),
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="https://deepseek.test",
+    ) as http_client:
+        client = DeepSeekClient(
+            api_key="test-key",
+            max_retries=2,
+            http_client=http_client,
+        )
+        result = await client.complete_with_context_fallback(
+            prompt_messages(),
+            fallback_messages=fallback_messages,
+        )
+
+    assert len(request_bodies) == 2
+    assert isinstance(result, DeepSeekSuccess)
+    assert result.used_context_fallback is True
+    assert request_bodies[1]["messages"] == [
+        {"role": "system", "content": "system rules"},
+        {"role": "user", "content": "latest tail message"},
+    ]
+    assert "summary" not in json.dumps(request_bodies[1]).lower()

@@ -11,6 +11,7 @@ import httpx
 
 from tg_typist.llm.errors import (
     DEEPSEEK_ERROR_AUTHENTICATION,
+    DEEPSEEK_ERROR_CONTEXT_LIMIT,
     DEEPSEEK_ERROR_INSUFFICIENT_BALANCE,
     DEEPSEEK_ERROR_INVALID_REQUEST,
     DEEPSEEK_ERROR_INVALID_RESPONSE,
@@ -27,7 +28,7 @@ DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
 CHAT_COMPLETIONS_PATH = "/chat/completions"
 
-_RETRYABLE_STATUS_CODES = {429, 500, 503}
+_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +42,7 @@ class DeepSeekSuccess:
     completion_tokens: int | None
     total_tokens: int | None
     latency_ms: int
+    used_context_fallback: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +51,7 @@ class DeepSeekFailure:
 
     error: DeepSeekError
     latency_ms: int
+    used_context_fallback: bool = False
 
 
 DeepSeekResult = DeepSeekSuccess | DeepSeekFailure
@@ -153,6 +156,36 @@ class DeepSeekClient:
             latency_ms=_elapsed_ms(started_at),
         )
 
+    async def complete_with_context_fallback(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        fallback_messages: Sequence[LLMMessage],
+    ) -> DeepSeekResult:
+        """Retry once with an explicit non-summarized fallback history on context limit."""
+
+        result = await self.complete(messages)
+        if not _is_context_limit_failure(result):
+            return result
+
+        fallback_result = await self.complete(fallback_messages)
+        if isinstance(fallback_result, DeepSeekSuccess):
+            return DeepSeekSuccess(
+                text=fallback_result.text,
+                model=fallback_result.model,
+                finish_reason=fallback_result.finish_reason,
+                prompt_tokens=fallback_result.prompt_tokens,
+                completion_tokens=fallback_result.completion_tokens,
+                total_tokens=fallback_result.total_tokens,
+                latency_ms=fallback_result.latency_ms,
+                used_context_fallback=True,
+            )
+        return DeepSeekFailure(
+            error=fallback_result.error,
+            latency_ms=fallback_result.latency_ms,
+            used_context_fallback=True,
+        )
+
     async def _post(
         self,
         payload: dict[str, object],
@@ -235,15 +268,39 @@ def _parse_success_response(response: httpx.Response, latency_ms: int) -> DeepSe
 
 def _parse_error_response(response: httpx.Response, api_key: str) -> DeepSeekError:
     status_code = response.status_code
+    provider_error = _provider_error(response)
+    message_redacted = _redacted_error_message(provider_error, response.status_code, api_key)
+    provider_error_type = _optional_str(provider_error.get("type"))
+    provider_error_code = _optional_str(provider_error.get("code"))
     return DeepSeekError(
-        code=_error_code_for_status(status_code),
-        message_redacted=_redacted_error_message(response, api_key),
+        code=_error_code_for_status(
+            status_code,
+            message_redacted,
+            provider_error_type=provider_error_type,
+            provider_error_code=provider_error_code,
+        ),
+        message_redacted=message_redacted,
         status_code=status_code,
         retryable=status_code in _RETRYABLE_STATUS_CODES,
+        provider_error_type=provider_error_type,
+        provider_error_code=provider_error_code,
     )
 
 
-def _error_code_for_status(status_code: int) -> str:
+def _error_code_for_status(
+    status_code: int,
+    message_redacted: str,
+    *,
+    provider_error_type: str | None,
+    provider_error_code: str | None,
+) -> str:
+    if _looks_like_context_limit(
+        status_code,
+        message_redacted,
+        provider_error_type=provider_error_type,
+        provider_error_code=provider_error_code,
+    ):
+        return DEEPSEEK_ERROR_CONTEXT_LIMIT
     if status_code == httpx.codes.UNAUTHORIZED:
         return DEEPSEEK_ERROR_AUTHENTICATION
     if status_code == httpx.codes.PAYMENT_REQUIRED:
@@ -255,18 +312,25 @@ def _error_code_for_status(status_code: int) -> str:
     return DEEPSEEK_ERROR_PROVIDER
 
 
-def _redacted_error_message(response: httpx.Response, api_key: str) -> str:
+def _provider_error(response: httpx.Response) -> dict[str, Any]:
     try:
         data = response.json()
     except ValueError:
-        return f"DeepSeek request failed with status {response.status_code}"
+        return {}
 
     error = data.get("error") if isinstance(data, dict) else None
-    if isinstance(error, dict):
-        message = error.get("message")
-        if isinstance(message, str) and message:
-            return message.replace(api_key, "***")[:500]
-    return f"DeepSeek request failed with status {response.status_code}"
+    return cast(dict[str, Any], error) if isinstance(error, dict) else {}
+
+
+def _redacted_error_message(
+    provider_error: dict[str, Any],
+    status_code: int,
+    api_key: str,
+) -> str:
+    message = provider_error.get("message")
+    if isinstance(message, str) and message:
+        return message.replace(api_key, "***")[:500]
+    return f"DeepSeek request failed with status {status_code}"
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -291,3 +355,36 @@ def _optional_str(value: object) -> str | None:
 
 def _elapsed_ms(started_at: float) -> int:
     return max(0, int((perf_counter() - started_at) * 1000))
+
+
+def _looks_like_context_limit(
+    status_code: int,
+    message: str,
+    *,
+    provider_error_type: str | None,
+    provider_error_code: str | None,
+) -> bool:
+    if status_code not in (httpx.codes.BAD_REQUEST, httpx.codes.UNPROCESSABLE_ENTITY):
+        return False
+    structured = " ".join(
+        value
+        for value in (provider_error_type, provider_error_code)
+        if value is not None
+    ).lower()
+    if structured and "context" in structured and any(
+        marker in structured for marker in ("limit", "length", "token", "exceed")
+    ):
+        return True
+
+    lowered = message.lower()
+    return (
+        "context" in lowered
+        and any(marker in lowered for marker in ("limit", "length", "token", "too long"))
+    )
+
+
+def _is_context_limit_failure(result: DeepSeekResult) -> bool:
+    return (
+        isinstance(result, DeepSeekFailure)
+        and result.error.code == DEEPSEEK_ERROR_CONTEXT_LIMIT
+    )

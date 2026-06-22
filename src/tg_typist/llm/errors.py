@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 DEEPSEEK_ERROR_AUTHENTICATION = "authentication_error"
+DEEPSEEK_ERROR_CONTEXT_LIMIT = "context_limit"
 DEEPSEEK_ERROR_INSUFFICIENT_BALANCE = "insufficient_balance"
 DEEPSEEK_ERROR_INVALID_RESPONSE = "invalid_response"
 DEEPSEEK_ERROR_INVALID_REQUEST = "invalid_request"
@@ -22,3 +23,5 @@ class DeepSeekError:
     message_redacted: str
     status_code: int | None = None
     retryable: bool = False
+    provider_error_type: str | None = None
+    provider_error_code: str | None = None

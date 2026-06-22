@@ -663,3 +663,29 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
   - `DEC-010` verification update.
 - Remaining:
   - Continue with `L4.4` for context-limit classification and explicit no-summarization retry fallback behavior.
+
+### 2026-06-22 - Task L4.4
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/llm/errors.py`
+  - `src/tg_typist/llm/deepseek.py`
+  - `src/tg_typist/llm/history.py`
+  - `tests/unit/test_deepseek_client.py`
+  - `tests/integration/test_history.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+- Summary:
+  - Added typed `context_limit` error classification using structured provider `error.type`/`error.code` first, with safe message matching only as a fallback.
+  - Kept context-limit out of the normal retry loop and added `complete_with_context_fallback` for exactly one explicit fallback request.
+  - Added fallback metadata to `PromptHistory`: `fallback_policy` and `fallback_reason`.
+  - Added tail-window history building that keeps the system prompt plus latest raw active-session messages under a rough character budget, without generating summaries.
+  - Added tests for structured and message-only context-limit classification, no normal retry, non-context validation errors, explicit fallback retry payload, and tail-window no-summary behavior.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\unit\test_deepseek_client.py tests\integration\test_history.py`: passed, 17 tests.
+  - `.\.venv\Scripts\ruff.exe check src\tg_typist\llm tests\unit\test_deepseek_client.py tests\integration\test_history.py`: passed.
+  - `.\.venv\Scripts\mypy.exe src tests\unit\test_deepseek_client.py tests\integration\test_history.py`: passed.
+- Decisions:
+  - none
+- Remaining:
+  - Continue with `L4.5` to persist model-call metadata, including context-limit and fallback policy details.
