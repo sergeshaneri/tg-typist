@@ -592,3 +592,27 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
   - none
 - Remaining:
   - Continue with `L4.2` for the history builder; `T3.3` remains blocked until `D2.6` has real PostgreSQL proof.
+
+### 2026-06-22 - Task T3.3
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/main.py`
+  - `src/tg_typist/bot/webhook.py`
+  - `tests/unit/test_webhook.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+- Summary:
+  - Added DB session-factory wiring in the FastAPI app factory when `DATABASE_URL` is configured.
+  - Added webhook-level Telegram update metadata extraction and `ProcessedTelegramUpdateRepository.record_received` before future dispatch side effects.
+  - Added duplicate webhook handling that returns HTTP 202 with `{"status": "duplicate"}` without reprocessing the update.
+  - Added a deterministic in-memory DB webhook test proving one `processed_telegram_updates` row is created and duplicate replay is skipped.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\unit\test_webhook.py`: passed, 5 tests and 1 StarletteDeprecationWarning.
+  - `.\.venv\Scripts\ruff.exe check src\tg_typist\bot\webhook.py tests\unit\test_webhook.py src\tg_typist\main.py`: passed.
+  - `.\.venv\Scripts\mypy.exe src tests\unit\test_webhook.py`: passed.
+- Decisions:
+  - none
+- Remaining:
+  - Concurrent retry hardening with atomic PostgreSQL insert or `IntegrityError` recovery remains a follow-up for the DB hardening/E2E replay tasks.
+  - Future aiogram dispatch should mark failed updates with `mark_failed` if dispatch raises after the pre-dispatch record.

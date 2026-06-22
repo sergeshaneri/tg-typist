@@ -42,7 +42,7 @@ Do not implement more than one task at a time unless the user explicitly asks.
 |---|---|---:|---|---|---|---|
 | T3.1 | S1.2 | DONE | Add FastAPI app factory with `/health` and Telegram webhook endpoint shell. | `src/tg_typist/main.py`, `src/tg_typist/bot/webhook.py`, tests | webhook tests | Health must not require live Telegram or DeepSeek. |
 | T3.2 | T3.1 | DONE | Verify Telegram webhook secret in production and test accept/reject paths. | `bot/webhook.py`, tests | webhook secret tests | Rejecting local tests accidentally or accepting bad production requests. |
-| T3.3 | D2.6, T3.1 | TODO | Add Telegram update idempotency before dispatching updates to handlers. | `bot/webhook.py`, repositories, tests | duplicate update webhook test | Telegram retries can duplicate messages/model calls. |
+| T3.3 | D2.6, T3.1 | DONE | Add Telegram update idempotency before dispatching updates to handlers. | `bot/webhook.py`, repositories, tests | duplicate update webhook test | Telegram retries can duplicate messages/model calls. |
 | T3.4 | D2.3, T3.1 | DONE | Add aiogram router and `/start`, `/help`, `/privacy`, `/reset` handlers. | `bot/router.py`, `bot/handlers.py`, `bot/messages.py`, tests | handler tests | User-facing text incomplete or not UTF-8. |
 | T3.5 | T3.4 | DONE | Add text-message handler shell that saves inbound text and returns placeholder response without DeepSeek. | handlers, service skeleton, repository tests | integration test | Useful for testing DB/Telegram before LLM exists. |
 | T3.6 | T3.4 | DONE | Add unsupported message and group-chat MVP policy handling. | handlers, messages, tests | handler tests | Bot may respond in groups when not intended. |
