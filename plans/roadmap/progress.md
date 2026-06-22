@@ -616,3 +616,24 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
 - Remaining:
   - Concurrent retry hardening with atomic PostgreSQL insert or `IntegrityError` recovery remains a follow-up for the DB hardening/E2E replay tasks.
   - Future aiogram dispatch should mark failed updates with `mark_failed` if dispatch raises after the pre-dispatch record.
+
+### 2026-06-22 - Task L4.2
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/llm/history.py`
+  - `tests/integration/test_history.py`
+  - `plans/roadmap/tasks.md`
+  - `plans/roadmap/progress.md`
+- Summary:
+  - Added `HistoryBuilder` that loads the versioned system prompt and appends saved active-session user/assistant messages in repository order.
+  - Added typed `LLMMessage` and `PromptHistory` records with prompt version, request message count and request char count for future model-call metadata.
+  - Added integration tests for system-first empty history, archived-session exclusion after reset, latest saved user message inclusion and failed assistant-message exclusion.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\integration\test_history.py`: passed, 4 tests.
+  - `.\.venv\Scripts\ruff.exe check src\tg_typist\llm\history.py tests\integration\test_history.py`: passed.
+  - `.\.venv\Scripts\mypy.exe src tests\integration\test_history.py`: passed.
+- Decisions:
+  - none
+- Remaining:
+  - Continue with `L4.3` for the DeepSeek HTTP client.
