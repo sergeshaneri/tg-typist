@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    name: Deterministic validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      ENVIRONMENT: test
+      UV_NO_SYNC: "0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run validation gate
+        run: uv run --python 3.12 --extra dev python scripts/validate.py
+
+  postgres-constraints:
+    name: PostgreSQL constraint tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tg_typist_test
+          POSTGRES_USER: tg_typist_test
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tg_typist_test -d tg_typist_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENVIRONMENT: test
+      UV_NO_SYNC: "0"
+      TEST_DATABASE_URL: postgresql://tg_typist_test:postgres@localhost:5432/tg_typist_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run PostgreSQL constraint tests
+        run: uv run --python 3.12 --extra dev pytest tests/integration/test_postgres_constraints.py -q

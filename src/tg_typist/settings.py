@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from os import environ
-from typing import Mapping
 from urllib.parse import urlsplit, urlunsplit
-
 
 TEST_ENVIRONMENT = "test"
 PRODUCTION_ENVIRONMENT = "production"

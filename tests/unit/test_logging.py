@@ -6,7 +6,9 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any, cast
 
+from _pytest.logging import LogCaptureFixture
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
@@ -67,9 +69,11 @@ def test_suppresses_full_message_prompt_text_and_content_fields() -> None:
     assert full_message not in rendered
 
 
-def test_structured_logger_attaches_redacted_context_to_record(caplog) -> None:
+def test_structured_logger_attaches_redacted_context_to_record(
+    caplog: LogCaptureFixture,
+) -> None:
     logger = logging.getLogger("tg_typist.tests.structured")
-    logger.handlers.clear()
+
     logger.propagate = True
     logger.setLevel(logging.INFO)
 
@@ -86,7 +90,7 @@ def test_structured_logger_attaches_redacted_context_to_record(caplog) -> None:
         )
 
     record = caplog.records[0]
-    structured = record.structured
+    structured = cast(dict[str, Any], record.__dict__["structured"])
     rendered = caplog.text
 
     assert structured["telegram_bot_token"] == REDACTED

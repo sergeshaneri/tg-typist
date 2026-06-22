@@ -21,37 +21,37 @@ Do not implement more than one task at a time unless the user explicitly asks.
 | S1.1 | H0.1 | DONE | Create Python project scaffold with package layout and dependency config. | `pyproject.toml`, `src/tg_typist/__init__.py`, `.gitignore`, `.env.example` | `python -m compileall -q src` | Wrong dependency versions or missing Railway-compatible start path. |
 | S1.2 | S1.1 | DONE | Add settings module with env parsing, safe redaction, test defaults and Railway `PORT` handling. | `src/tg_typist/settings.py`, `tests/unit/test_settings.py` | `pytest tests/unit/test_settings.py` | Secrets could appear in repr/log output or app could ignore Railway port. |
 | S1.3 | S1.2 | DONE | Add structured logging helper with redaction filters. | `src/tg_typist/logging.py`, `tests/unit/test_logging.py` | `pytest tests/unit/test_logging.py` | Logging full messages or secrets by accident. |
-| S1.4 | S1.1 | TODO | Add unified validation script and baseline tooling. | `scripts/validate.py`, `scripts/smoke_config.py`, `pyproject.toml` | `python scripts/validate.py` | Validation may assume tests or DB before they exist; use staged checks. |
-| S1.5 | S1.4 | TODO | Add GitHub Actions workflow for deterministic checks. | `.github/workflows/ci.yml` | local `python scripts/validate.py` | CI must not require live secrets. |
+| S1.4 | S1.1 | DONE | Add unified validation script and baseline tooling. | `scripts/validate.py`, `scripts/smoke_config.py`, `pyproject.toml` | `python scripts/validate.py` | Validation may assume tests or DB before they exist; use staged checks. |
+| S1.5 | S1.4 | DONE | Add GitHub Actions workflow for deterministic checks. | `.github/workflows/ci.yml` | local `python scripts/validate.py` | CI must not require live secrets. |
 
 ## Phase 2: Database Foundation
 
 | ID | Depends | Status | Goal | Likely files | Checks | Risks |
 |---|---|---:|---|---|---|---|
-| D2.1 | S1.2 | TODO | Add SQLAlchemy async engine/session setup and Alembic base. | `src/tg_typist/db/*`, `alembic.ini`, migrations env | `pytest tests/unit`, migration smoke if possible | Async DB config can diverge between local, CI and Railway. |
-| D2.2 | D2.1 | TODO | Add models and migration for users, sessions, messages, processed Telegram updates and model calls. | `src/tg_typist/db/models.py`, migration version | repository model tests | Schema may miss future orchestrator extension points. |
-| D2.3 | D2.2 | TODO | Add repositories for user/session/message/model-call operations. | `src/tg_typist/db/repositories.py`, `tests/integration/test_repositories.py` | repository tests | Multiple active sessions per user if uniqueness is weak. |
-| D2.4 | D2.3 | TODO | Add active-session history query and reset transaction. | repository tests | `pytest tests/integration/test_repositories.py` | `/reset` could mix archived history into active prompt. |
-| D2.5 | D2.2 | TODO | Add DB smoke script for migrations and health. | `scripts/smoke_db.py` | `python scripts/smoke_db.py` or documented skip | CI may lack Postgres; skip behavior must be explicit. |
-| D2.6 | D2.2 | TODO | Enforce PostgreSQL constraints for one active session per user and unique processed Telegram updates. | migration version, repository tests | Postgres integration tests | SQLite cannot validate this; must use real PostgreSQL. |
-| D2.7 | D2.6, S1.5 | TODO | Add CI PostgreSQL service or documented Testcontainers flow for DB constraints and migrations. | `.github/workflows/ci.yml`, test config | CI validation | Postgres service can slow CI if not scoped. |
+| D2.1 | S1.2 | DONE | Add SQLAlchemy async engine/session setup and Alembic base. | `src/tg_typist/db/*`, `alembic.ini`, migrations env | `pytest tests/unit`, migration smoke if possible | Async DB config can diverge between local, CI and Railway. |
+| D2.2 | D2.1 | DONE | Add models and migration for users, sessions, messages, processed Telegram updates and model calls. | `src/tg_typist/db/models.py`, migration version | repository model tests | Schema may miss future orchestrator extension points. |
+| D2.3 | D2.2 | DONE | Add repositories for user/session/message/model-call operations. | `src/tg_typist/db/repositories.py`, `tests/integration/test_repositories.py` | repository tests | Multiple active sessions per user if uniqueness is weak. |
+| D2.4 | D2.3 | DONE | Add active-session history query and reset transaction. | repository tests | `pytest tests/integration/test_repositories.py` | `/reset` could mix archived history into active prompt. |
+| D2.5 | D2.2 | DONE | Add DB smoke script for migrations and health. | `scripts/smoke_db.py` | `python scripts/smoke_db.py` or documented skip | CI may lack Postgres; skip behavior must be explicit. |
+| D2.6 | D2.2 | BLOCKED | Enforce PostgreSQL constraints for one active session per user and unique processed Telegram updates. | migration version, repository tests | Postgres integration tests | SQLite cannot validate this; must use real PostgreSQL. |
+| D2.7 | D2.6, S1.5 | DONE | Add CI PostgreSQL service or documented Testcontainers flow for DB constraints and migrations. | `.github/workflows/ci.yml`, test config | CI validation | Postgres service can slow CI if not scoped. |
 
 ## Phase 3: Telegram Webhook and Commands
 
 | ID | Depends | Status | Goal | Likely files | Checks | Risks |
 |---|---|---:|---|---|---|---|
-| T3.1 | S1.2 | TODO | Add FastAPI app factory with `/health` and Telegram webhook endpoint shell. | `src/tg_typist/main.py`, `src/tg_typist/bot/webhook.py`, tests | webhook tests | Health must not require live Telegram or DeepSeek. |
-| T3.2 | T3.1 | TODO | Verify Telegram webhook secret in production and test accept/reject paths. | `bot/webhook.py`, tests | webhook secret tests | Rejecting local tests accidentally or accepting bad production requests. |
+| T3.1 | S1.2 | DONE | Add FastAPI app factory with `/health` and Telegram webhook endpoint shell. | `src/tg_typist/main.py`, `src/tg_typist/bot/webhook.py`, tests | webhook tests | Health must not require live Telegram or DeepSeek. |
+| T3.2 | T3.1 | DONE | Verify Telegram webhook secret in production and test accept/reject paths. | `bot/webhook.py`, tests | webhook secret tests | Rejecting local tests accidentally or accepting bad production requests. |
 | T3.3 | D2.6, T3.1 | TODO | Add Telegram update idempotency before dispatching updates to handlers. | `bot/webhook.py`, repositories, tests | duplicate update webhook test | Telegram retries can duplicate messages/model calls. |
-| T3.4 | D2.3, T3.1 | TODO | Add aiogram router and `/start`, `/help`, `/privacy`, `/reset` handlers. | `bot/router.py`, `bot/handlers.py`, `bot/messages.py`, tests | handler tests | User-facing text incomplete or not UTF-8. |
-| T3.5 | T3.4 | TODO | Add text-message handler shell that saves inbound text and returns placeholder response without DeepSeek. | handlers, service skeleton, repository tests | integration test | Useful for testing DB/Telegram before LLM exists. |
-| T3.6 | T3.4 | TODO | Add unsupported message and group-chat MVP policy handling. | handlers, messages, tests | handler tests | Bot may respond in groups when not intended. |
+| T3.4 | D2.3, T3.1 | DONE | Add aiogram router and `/start`, `/help`, `/privacy`, `/reset` handlers. | `bot/router.py`, `bot/handlers.py`, `bot/messages.py`, tests | handler tests | User-facing text incomplete or not UTF-8. |
+| T3.5 | T3.4 | DONE | Add text-message handler shell that saves inbound text and returns placeholder response without DeepSeek. | handlers, service skeleton, repository tests | integration test | Useful for testing DB/Telegram before LLM exists. |
+| T3.6 | T3.4 | DONE | Add unsupported message and group-chat MVP policy handling. | handlers, messages, tests | handler tests | Bot may respond in groups when not intended. |
 
 ## Phase 4: DeepSeek Adapter and Prompt Handling
 
 | ID | Depends | Status | Goal | Likely files | Checks | Risks |
 |---|---|---:|---|---|---|---|
-| L4.1 | S1.2 | TODO | Add versioned system prompt loader and initial typist prompt file placeholder. | `src/tg_typist/llm/prompts.py`, `src/tg_typist/prompts/typist_system.md`, tests | prompt tests | Prompt may be too vague; user can replace content later. |
+| L4.1 | S1.2 | DONE | Add versioned system prompt loader and initial typist prompt file placeholder. | `src/tg_typist/llm/prompts.py`, `src/tg_typist/prompts/typist_system.md`, tests | prompt tests | Prompt may be too vague; user can replace content later. |
 | L4.2 | D2.4, L4.1 | TODO | Add history builder that emits system prompt plus full active-session messages. | `src/tg_typist/llm/history.py`, tests | history tests | Accidentally sending archived sessions or missing latest user message. |
 | L4.3 | S1.2 | TODO | Add DeepSeek HTTP client with typed success/error results, current model defaults, timeout and retries. | `src/tg_typist/llm/deepseek.py`, `llm/errors.py`, tests with respx | adapter tests | Exact DeepSeek response shape and model names need official-doc verification. |
 | L4.4 | L4.3 | TODO | Add context-limit classification and one retry fallback contract without summarization. | `llm/errors.py`, `llm/history.py`, tests | context-limit tests | Fallback could silently violate full-history policy if not recorded. |

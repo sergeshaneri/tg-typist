@@ -8,7 +8,6 @@ from collections.abc import Mapping
 from typing import Any, TextIO
 from urllib.parse import urlsplit, urlunsplit
 
-
 REDACTED = "***"
 CONTENT_REDACTED = "[redacted_content]"
 
