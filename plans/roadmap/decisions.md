@@ -237,3 +237,22 @@ Add `fallback_policy` and `fallback_reason` to `model_calls`. Store request mess
 ### Consequences
 
 `M5.1` can persist model-call metadata before and after provider calls while preserving privacy. Prompt text remains in `messages`, scoped by session, and model-call rows only carry operational metadata.
+
+## DEC-012: Use all-in-one Reinin prompt for MVP runtime
+
+- Status: Accepted
+- Date: 2026-06-23
+- Owner: user direction
+- Related tasks: L4.1, L4.2, M5.1, O9.3
+
+### Context
+
+The user provided three prompt files: one all-in-one socionics/Reinin prompt for immediate use and two one-sign prompts for future separate trait workflows.
+
+### Decision
+
+Use the all-in-one Reinin prompt as the bundled runtime system prompt with version `typist_all_in_one_reinin_v1`. Store the irrationality/rationality and extroversion/introversion prompts as future package resources, but do not select them at runtime until a later orchestrator/sign-specific task.
+
+### Consequences
+
+MVP interview behavior now follows the all-in-one Reinin prompt. Future orchestrator work can reuse the staged one-sign prompt resources without changing current runtime behavior.

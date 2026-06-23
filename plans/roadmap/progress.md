@@ -3,7 +3,7 @@
 ## Snapshot
 
 - Created: 2026-06-20.
-- Current repository state: application scaffold, database foundation, FastAPI webhook shell with production secret verification, deterministic aiogram command handlers, no-DeepSeek text-message persistence shell, and a versioned bundled system-prompt loader are in place; PostgreSQL-specific proof is wired into CI and awaits a real GitHub Actions run.
+- Current repository state: application scaffold, database foundation, FastAPI webhook shell with production secret verification and update idempotency, deterministic aiogram command handlers, no-DeepSeek text-message persistence shell, active-session history builder, DeepSeek adapter, context-limit fallback contract, model-call metadata persistence, and a production bundled system prompt are in place; PostgreSQL-specific proof is wired into CI and awaits a real GitHub Actions run.
 - Current product target: Telegram bot on Railway with Railway PostgreSQL and DeepSeek API.
 - MVP history policy: send full active-session conversation to DeepSeek.
 - Validation: `scripts/validate.py` runs compile, Ruff, mypy, unit tests, config smoke and safely-skipping DB smoke.
@@ -15,15 +15,15 @@
 | Roadmap artifacts | DONE | PRD, architecture, domain model, deployment, security checklist, tasks and handoff created. |
 | Application scaffold | DONE | Python project scaffold and dependency metadata created. |
 | Database | BLOCKED | Async SQLAlchemy engine/session, core schema/models, repository layer and DB smoke are added; model/migration encode active-session and processed-update uniqueness, but real PostgreSQL constraint proof awaits an actual CI PostgreSQL run or local `TEST_DATABASE_URL`. |
-| Telegram integration | IN PROGRESS | FastAPI app factory, `/health`, Telegram webhook shell, production secret verification, aiogram command handlers, text-message persistence shell, private-chat MVP policy and unsupported-message fallback are in place; idempotency, webhook dispatch and full DeepSeek text processing remain planned. |
-| DeepSeek integration | IN PROGRESS | Versioned bundled system-prompt loader and initial typist prompt placeholder are in place; history builder, adapter, context-limit handling and model-call integration remain planned. |
+| Telegram integration | IN PROGRESS | FastAPI app factory, `/health`, Telegram webhook shell, production secret verification, update idempotency, aiogram command handlers, text-message persistence shell, private-chat MVP policy and unsupported-message fallback are in place; webhook dispatch and full DeepSeek text processing remain planned. |
+| DeepSeek integration | IN PROGRESS | Versioned bundled system-prompt loader now uses the all-in-one Reinin prompt; future one-sign prompt resources are staged; history builder, adapter, context-limit fallback and model-call metadata persistence are in place. |
 | Railway deployment | TODO | Deployment docs planned. |
 | GitHub CI | DONE | `.github/workflows/ci.yml` runs the local validation gate without live secrets and has a dedicated PostgreSQL service job for opt-in constraint tests. |
 | Future orchestrator | TODO | Out of MVP, but schema will preserve extension points. |
 
 ## Recommended Next Step
 
-Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6`; also monitor the next GitHub Actions run, then recheck `D2.6` and mark it DONE if the PostgreSQL constraint tests pass against the real service.
+Continue with `M5.1` to wire saved user messages, active-session history, DeepSeek calls and model-call metadata into mocked end-to-end interview processing.
 
 ## Milestone Checklist
 
@@ -718,3 +718,28 @@ Continue with `L4.2` for the history builder while `T3.3` waits on blocked `D2.6
   - `DEC-011`
 - Remaining:
   - Continue with `M5.1` to wire saved user messages, history building, DeepSeek calls and model-call metadata into end-to-end mocked interview processing.
+
+### 2026-06-23 - Prompt Resource Update
+
+- Status: DONE
+- Changed files:
+  - `src/tg_typist/prompts/typist_system.md`
+  - `src/tg_typist/prompts/future/01-irrationality-rationality.md`
+  - `src/tg_typist/prompts/future/02-extroversion-introversion.md`
+  - `src/tg_typist/llm/prompts.py`
+  - `tests/unit/test_prompts.py`
+  - `plans/roadmap/decisions.md`
+  - `plans/roadmap/progress.md`
+- Summary:
+  - Replaced the placeholder runtime system prompt with the provided all-in-one Reinin prompt.
+  - Updated the system prompt version to `typist_all_in_one_reinin_v1`.
+  - Added the provided rationality/irrationality and extroversion/introversion prompts as future package resources without enabling runtime selection yet.
+  - Updated prompt-loader tests to verify UTF-8 Russian content and future resource availability.
+- Checks:
+  - `.\.venv\Scripts\python.exe -m pytest tests\unit\test_prompts.py tests\integration\test_history.py`: passed, 10 tests.
+  - `.\.venv\Scripts\ruff.exe check tests\unit\test_prompts.py src\tg_typist\llm\prompts.py`: passed.
+  - `.\.venv\Scripts\mypy.exe src tests\unit\test_prompts.py`: passed.
+- Decisions:
+  - `DEC-012`
+- Remaining:
+  - Continue with `M5.1`.

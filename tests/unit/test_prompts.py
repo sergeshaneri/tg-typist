@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from importlib import resources
 
 import pytest
 
@@ -18,19 +19,19 @@ def test_default_system_prompt_loads_versioned_non_empty_text() -> None:
 
     assert isinstance(prompt, SystemPrompt)
     assert prompt.version == SYSTEM_PROMPT_VERSION
-    assert prompt.version == "typist_system_v1"
+    assert prompt.version == "typist_all_in_one_reinin_v1"
     assert prompt.text.strip()
-    assert len(prompt.text) > 100
+    assert len(prompt.text) > 15_000
 
 
-def test_default_system_prompt_is_utf8_russian_placeholder() -> None:
+def test_default_system_prompt_is_utf8_all_in_one_reinin_prompt() -> None:
     prompt = load_system_prompt()
 
-    assert "соционическое интервью" in prompt.text
-    assert "краткие уточняющие вопросы" in prompt.text
-    assert "не делай финальный вывод" in prompt.text
-    assert "внешних инструментов" in prompt.text
-    assert "плейсхолдер" in prompt.text.lower()
+    assert "Вы — соционический бот" in prompt.text
+    assert "Сбор общих сведений" in prompt.text
+    assert "Диагностика по Признакам Рейнина" in prompt.text
+    assert "СТРОГО в следующем порядке" in prompt.text
+    assert "Задавайте по ОДНОМУ вопросу в ОДНОМ сообщении" in prompt.text
 
 
 def test_missing_system_prompt_resource_raises_clear_error() -> None:
@@ -59,4 +60,19 @@ def test_system_prompt_loader_does_not_require_environment_secrets(
     prompt = load_system_prompt(resource_name=DEFAULT_SYSTEM_PROMPT_RESOURCE)
 
     assert prompt.version == SYSTEM_PROMPT_VERSION
-    assert "соционическое интервью" in prompt.text
+    assert "Вы — соционический бот" in prompt.text
+
+
+def test_future_one_sign_prompts_are_available_as_utf8_resources() -> None:
+    prompt_root = resources.files("tg_typist.prompts")
+    irrationality = prompt_root.joinpath("future/01-irrationality-rationality.md").read_text(
+        encoding="utf-8"
+    )
+    extroversion = prompt_root.joinpath("future/02-extroversion-introversion.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Рациональность/Иррациональность" in irrationality
+    assert "Экстраверсия/Интроверсия" in extroversion
+    assert "Один вопрос за раз" in irrationality
+    assert "v2" in extroversion

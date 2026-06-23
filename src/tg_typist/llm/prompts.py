@@ -5,7 +5,7 @@ from importlib import resources
 
 PROMPTS_PACKAGE = "tg_typist.prompts"
 DEFAULT_SYSTEM_PROMPT_RESOURCE = "typist_system.md"
-SYSTEM_PROMPT_VERSION = "typist_system_v1"
+SYSTEM_PROMPT_VERSION = "typist_all_in_one_reinin_v1"
 
 
 @dataclass(frozen=True, slots=True)
